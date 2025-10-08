@@ -1,7 +1,7 @@
 {
   "name": "tienda-api",
   "version": "1.0.0",
-  "description": "API simple de products y carts",
+  "description": "API simple de products y carts con Handlebars y Socket.IO",
   "main": "app.js",
   "scripts": {
     "start": "node app.js",
@@ -11,7 +11,9 @@
   "license": "ISC",
   "dependencies": {
     "express": "^4.18.2",
-    "uuid": "^8.3.2"
+    "uuid": "^8.3.2",
+    "express-handlebars": "^7.0.7",
+    "socket.io": "^4.7.2"
   },
   "devDependencies": {
     "nodemon": "^2.0.22"

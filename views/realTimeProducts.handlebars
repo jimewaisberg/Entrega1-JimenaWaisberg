@@ -1,0 +1,61 @@
+<h1>Real Time Products</h1>
+<p>Esta vista usa websockets para recibir actualizaciones automáticas cuando se crean o eliminan productos.</p>
+<p>También podés crear productos desde el formulario abajo (esto enviará por websocket).</p>
+
+<section style="display:flex; gap:16px; align-items:flex-start;">
+  <div style="flex:1;">
+    <h2>Productos (en tiempo real)</h2>
+    <div id="productsList">
+      {{#if products.length}}
+        {{#each products}}
+        <div class="product" data-id="{{this.id}}">
+          <div>
+            <strong>{{this.title}}</strong> — {{this.description}} <br/>
+            <small>Precio: ${{this.price}} | Stock: {{this.stock}} | ID: {{this.id}}</small>
+          </div>
+          <div class="controls">
+            <button class="btn btn-danger btn-delete" data-id="{{this.id}}">Eliminar</button>
+          </div>
+        </div>
+        {{/each}}
+      {{else}}
+        <p>No hay productos aún.</p>
+      {{/if}}
+    </div>
+  </div>
+
+  <div style="width:360px;">
+    <h2>Crear producto (via WebSocket)</h2>
+    <form id="createProductForm">
+      <label>Título</label>
+      <input name="title" required placeholder="Título"/>
+      <label>Descripción</label>
+      <textarea name="description" rows="2" placeholder="Descripción"></textarea>
+      <label>Código</label>
+      <input name="code" placeholder="code123"/>
+      <div class="row">
+        <div class="col">
+          <label>Precio</label>
+          <input name="price" type="number" step="0.01" placeholder="100"/>
+        </div>
+        <div class="col">
+          <label>Stock</label>
+          <input name="stock" type="number" placeholder="10"/>
+        </div>
+      </div>
+      <label>Categoría</label>
+      <input name="category" placeholder="categoría"/>
+      <label>Thumbnails (separados por coma)</label>
+      <input name="thumbnails" placeholder="http://..., http://..."/>
+      <button class="btn btn-primary" type="submit">Crear producto</button>
+    </form>
+
+    <hr/>
+    <h3>También podés usar HTTP</h3>
+    <p>Podes crear producto mediante POST a <code>/api/products</code> y la vista se actualizará igual.</p>
+  </div>
+</section>
+
+<!-- Incluyo los scripts EN LA VISTA para evitar problemas de secciones/partials -->
+<script src="/socket.io/socket.io.js"></script>
+<script src="/js/realtime.js"></script>

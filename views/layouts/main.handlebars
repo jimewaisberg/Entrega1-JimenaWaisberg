@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tienda - {{title}}</title>
+  <style>
+    body { font-family: Arial, Helvetica, sans-serif; margin: 20px; background:#f7f7f7; color:#222; }
+    .container { max-width:1000px; margin:0 auto; background:white; padding:20px; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.06); }
+    .product { border-bottom:1px solid #eee; padding:8px 0; display:flex; justify-content:space-between; align-items:center; }
+    .product:last-child { border-bottom: none; }
+    .controls { display:flex; gap:8px; }
+    .btn { padding:6px 10px; border-radius:4px; border: none; cursor:pointer; }
+    .btn-danger { background:#c13a3a; color:white; }
+    .btn-primary { background:#2b6cb0; color:white; }
+    input, textarea { padding:6px; width:100%; box-sizing:border-box; margin-bottom:8px; }
+    form .row { display:flex; gap:8px; }
+    form .col { flex:1; }
+  </style>
+  {{{head}}}
+</head>
+<body>
+  <div class="container">
+    {{{body}}}
+  </div>
+  {{{scripts}}}
+</body>
+</html>

@@ -1,0 +1,19 @@
+
+<h1>Home - Lista de productos (renderizado servidor-side)</h1>
+<p>Ruta alternativa: <a href="/realtimeproducts">Ver productos en tiempo real (websockets)</a></p>
+
+{{#if products.length}}
+  {{#each products}}
+    <div class="product">
+      <div>
+        <strong>{{this.title}}</strong> — {{this.description}} <br/>
+        <small>Precio: ${{this.price}} | Stock: {{this.stock}} | ID: {{this.id}}</small>
+      </div>
+      <div class="controls">
+        <a class="btn btn-primary" href="/realtimeproducts">Abrir realtime</a>
+      </div>
+    </div>
+  {{/each}}
+{{else}}
+  <p>No hay productos aún.</p>
+{{/if}}
