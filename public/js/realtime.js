@@ -1,6 +1,5 @@
-
+// client-side socket handler for realtimeProducts view
 const socket = io();
-
 
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => Array.from(document.querySelectorAll(sel));
@@ -44,6 +43,32 @@ function escapeHtml(text) {
     .replace(/>/g, '&gt;');
 }
 
+/* --------------------
+   Toast implementation
+   -------------------- */
+function showToast(type = 'success', text = '') {
+  const container = document.getElementById('toast-container');
+  if (!container) return;
+  const toast = document.createElement('div');
+  toast.className = `toast toast-${type}`;
+  toast.innerHTML = `<div class="msg">${escapeHtml(text)}</div>`;
+  container.appendChild(toast);
+  // Force reflow to enable transition
+  requestAnimationFrame(() => {
+    toast.classList.add('show');
+  });
+  // Hide after 3s
+  setTimeout(() => {
+    toast.classList.remove('show');
+    setTimeout(() => {
+      toast.remove();
+    }, 200);
+  }, 3000);
+}
+
+/* --------------------
+   Socket events
+   -------------------- */
 socket.on('connect', () => {
   console.log('Conectado al server via socket, id:', socket.id);
 });
@@ -53,12 +78,25 @@ socket.on('updateProducts', (products) => {
   renderProducts(products);
 });
 
-socket.on('error', (err) => {
-  console.error('Socket error', err);
-  alert(err.message || JSON.stringify(err));
+socket.on('actionSuccess', (payload) => {
+  const msg = payload && payload.message ? payload.message : 'Acción completada';
+  showToast('success', msg);
 });
 
+socket.on('actionError', (payload) => {
+  const msg = payload && payload.message ? payload.message : 'Ocurrió un error';
+  showToast('error', msg);
+});
 
+// generic socket error
+socket.on('error', (err) => {
+  console.error('Socket error', err);
+  showToast('error', (err && err.message) ? err.message : 'Error en la conexión');
+});
+
+/* --------------------
+   Form submit (create product)
+   -------------------- */
 const form = document.getElementById('createProductForm');
 if (form) {
   form.addEventListener('submit', (e) => {
@@ -68,10 +106,10 @@ if (form) {
       title: fd.get('title'),
       description: fd.get('description'),
       code: fd.get('code'),
-      price: parseFloat(fd.get('price')) || 0,
-      stock: parseInt(fd.get('stock')) || 0,
+      price: fd.get('price') ? parseFloat(fd.get('price')) : 0,
+      stock: fd.get('stock') ? parseInt(fd.get('stock')) : 0,
       category: fd.get('category'),
-      thumbnails: fd.get('thumbnails') 
+      thumbnails: fd.get('thumbnails')
     };
     socket.emit('createProduct', payload);
     form.reset();
