@@ -2,7 +2,8 @@ const express = require('express');
 const router = express.Router();
 const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
-const dataPath = './data/carrito.json';
+const path = require('path');
+const dataPath = path.join(__dirname, '..', 'data', 'carrito.json');
 
 const getCarts = () => {
   const jsonData = fs.readFileSync(dataPath);
@@ -50,3 +51,4 @@ router.post('/:cid/product/:pid', (req, res) => {
 });
 
 module.exports = router;
+
