@@ -1,0 +1,115 @@
+<h1>{{product.title}}</h1>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 20px;">
+  <div>
+    {{#if product.thumbnails.length}}
+      <img src="{{product.thumbnails.[0]}}" alt="{{product.title}}" style="width: 100%; border-radius: 8px; border: 1px solid #ddd;">
+    {{else}}
+      <div style="width: 100%; height: 300px; background: #f0f0f0; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #999;">
+        Sin imagen
+      </div>
+    {{/if}}
+  </div>
+  
+  <div>
+    <h2 style="color: #2b6cb0; margin-top: 0;">${{product.price}}</h2>
+    
+    <div style="margin: 20px 0;">
+      <h3>Descripción</h3>
+      <p style="color: #666; line-height: 1.6;">{{product.description}}</p>
+    </div>
+    
+    <div style="margin: 20px 0;">
+      <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+          <td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Categoría:</strong></td>
+          <td style="padding: 8px; border-bottom: 1px solid #eee;">{{product.category}}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Stock disponible:</strong></td>
+          <td style="padding: 8px; border-bottom: 1px solid #eee;">{{product.stock}}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Estado:</strong></td>
+          <td style="padding: 8px; border-bottom: 1px solid #eee;">
+            {{#if product.status}}
+              <span style="color: #28a745;">Disponible</span>
+            {{else}}
+              <span style="color: #dc3545;">No disponible</span>
+            {{/if}}
+          </td>
+        </tr>
+        {{#if product.code}}
+        <tr>
+          <td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Código:</strong></td>
+          <td style="padding: 8px; border-bottom: 1px solid #eee;">{{product.code}}</td>
+        </tr>
+        {{/if}}
+      </table>
+    </div>
+    
+    <div style="margin-top: 30px;">
+      <button id="addToCartBtn" data-product-id="{{product._id}}" class="btn btn-primary" style="padding: 12px 24px; font-size: 16px; width: 100%;">
+        Agregar al carrito
+      </button>
+    </div>
+    
+    <div style="margin-top: 15px;">
+      <a href="/products" class="btn" style="background: #6c757d; color: white; text-decoration: none; display: inline-block; padding: 8px 16px;">
+        ← Volver a productos
+      </a>
+    </div>
+  </div>
+</div>
+
+<script>
+document.getElementById('addToCartBtn').addEventListener('click', async function() {
+  const productId = this.dataset.productId;
+  let cartId = localStorage.getItem('cartId');
+  
+  if (!cartId) {
+    try {
+      const response = await fetch('/api/carts', { method: 'POST' });
+      const cart = await response.json();
+      cartId = cart._id;
+      localStorage.setItem('cartId', cartId);
+    } catch (error) {
+      alert('Error al crear carrito');
+      return;
+    }
+  }
+  
+  try {
+    const response = await fetch(`/api/carts/${cartId}/product/${productId}`, { method: 'POST' });
+    if (response.ok) {
+      alert('Producto agregado al carrito');
+      // Opcional: redirigir al carrito
+      // window.location.href = `/carts/${cartId}`;
+    } else {
+      const error = await response.json();
+      alert('Error: ' + (error.message || 'No se pudo agregar el producto'));
+    }
+  } catch (error) {
+    alert('Error al agregar producto al carrito');
+  }
+});
+</script>
+
+<style>
+.btn {
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+  transition: opacity 0.2s;
+}
+.btn:hover {
+  opacity: 0.8;
+}
+.btn-primary {
+  background: #2b6cb0;
+  color: white;
+}
+</style>
+

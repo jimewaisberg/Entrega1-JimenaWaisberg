@@ -1,0 +1,139 @@
+<h1>Productos</h1>
+
+<!-- Formulario de filtros y ordenamiento -->
+<div style="margin-bottom: 20px; padding: 15px; background: #f0f0f0; border-radius: 4px;">
+  <form method="GET" action="/products" style="display: flex; gap: 10px; flex-wrap: wrap; align-items: end;">
+    <div style="flex: 1; min-width: 200px;">
+      <label>Buscar (categoría o disponibilidad):</label>
+      <input type="text" name="query" value="{{currentQuery}}" placeholder="category:electronics o status:true" style="width: 100%; padding: 6px;">
+      <small style="color: #666;">Ej: category:electronics, status:true</small>
+    </div>
+    <div style="flex: 0 0 120px;">
+      <label>Ordenar por precio:</label>
+      <select name="sort" style="width: 100%; padding: 6px;">
+        <option value="">Sin ordenar</option>
+        <option value="asc" {{#if (eq currentSort 'asc')}}selected{{/if}}>Menor a Mayor</option>
+        <option value="desc" {{#if (eq currentSort 'desc')}}selected{{/if}}>Mayor a Menor</option>
+      </select>
+    </div>
+    <div style="flex: 0 0 100px;">
+      <label>Por página:</label>
+      <input type="number" name="limit" value="{{currentLimit}}" min="1" max="50" style="width: 100%; padding: 6px;">
+    </div>
+    <div>
+      <button type="submit" class="btn btn-primary">Filtrar</button>
+    </div>
+    <div>
+      <a href="/products" class="btn" style="background: #ccc; text-decoration: none; display: inline-block;">Limpiar</a>
+    </div>
+  </form>
+</div>
+
+<!-- Lista de productos -->
+{{#if products.length}}
+  <div class="products-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; margin-bottom: 20px;">
+    {{#each products}}
+      <div class="product-card" style="border: 1px solid #ddd; border-radius: 8px; padding: 15px; background: white;">
+        <h3 style="margin-top: 0;">{{this.title}}</h3>
+        <p style="color: #666; font-size: 14px;">{{this.description}}</p>
+        <div style="margin: 15px 0;">
+          <strong style="font-size: 18px; color: #2b6cb0;">${{this.price}}</strong>
+          <span style="color: #666; font-size: 14px;"> | Stock: {{this.stock}}</span>
+        </div>
+        {{#if this.category}}
+          <div style="margin-bottom: 10px;">
+            <small style="background: #e0e0e0; padding: 2px 8px; border-radius: 4px;">{{this.category}}</small>
+          </div>
+        {{/if}}
+        <div style="display: flex; gap: 8px;">
+          <a href="/products/{{this._id}}" class="btn btn-primary" style="flex: 1; text-align: center; text-decoration: none;">Ver detalles</a>
+          <button class="btn btn-success add-to-cart-btn" data-product-id="{{this._id}}" style="flex: 1; background: #28a745;">Agregar al carrito</button>
+        </div>
+      </div>
+    {{/each}}
+  </div>
+
+  <!-- Paginación -->
+  <div style="display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 30px; padding: 20px;">
+    {{#if pagination.hasPrevPage}}
+      <a href="{{pagination.prevLink}}" class="btn btn-primary">← Anterior</a>
+    {{else}}
+      <span class="btn" style="background: #ccc; cursor: not-allowed; opacity: 0.5;">← Anterior</span>
+    {{/if}}
+    
+    <span style="padding: 0 15px;">
+      Página {{pagination.page}} de {{pagination.totalPages}}
+    </span>
+    
+    {{#if pagination.hasNextPage}}
+      <a href="{{pagination.nextLink}}" class="btn btn-primary">Siguiente →</a>
+    {{else}}
+      <span class="btn" style="background: #ccc; cursor: not-allowed; opacity: 0.5;">Siguiente →</span>
+    {{/if}}
+  </div>
+{{else}}
+  <p style="text-align: center; padding: 40px; color: #666;">No hay productos disponibles.</p>
+{{/if}}
+
+<script>
+// Función helper para Handlebars (si es necesario, se puede agregar al servidor)
+// Por ahora usamos comparación simple
+
+// Agregar al carrito desde la lista
+document.querySelectorAll('.add-to-cart-btn').forEach(btn => {
+  btn.addEventListener('click', async function() {
+    const productId = this.dataset.productId;
+    // Necesitamos un cartId - por ahora usamos una variable global o prompt
+    let cartId = localStorage.getItem('cartId');
+    
+    if (!cartId) {
+      // Crear nuevo carrito
+      try {
+        const response = await fetch('/api/carts', { method: 'POST' });
+        const cart = await response.json();
+        cartId = cart._id;
+        localStorage.setItem('cartId', cartId);
+      } catch (error) {
+        alert('Error al crear carrito');
+        return;
+      }
+    }
+    
+    // Agregar producto al carrito
+    try {
+      const response = await fetch(`/api/carts/${cartId}/product/${productId}`, { method: 'POST' });
+      if (response.ok) {
+        alert('Producto agregado al carrito');
+      } else {
+        alert('Error al agregar producto');
+      }
+    } catch (error) {
+      alert('Error al agregar producto al carrito');
+    }
+  });
+});
+</script>
+
+<style>
+.btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+  transition: opacity 0.2s;
+}
+.btn:hover {
+  opacity: 0.8;
+}
+.btn-primary {
+  background: #2b6cb0;
+  color: white;
+}
+.btn-success {
+  background: #28a745;
+  color: white;
+}
+</style>
+

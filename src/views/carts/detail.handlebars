@@ -1,0 +1,166 @@
+<h1>Carrito de Compras</h1>
+
+{{#if cart.products.length}}
+  <div style="margin-top: 20px;">
+    {{#each cart.products}}
+      {{#if this.product}}
+        <div class="cart-item" style="border: 1px solid #ddd; border-radius: 8px; padding: 15px; margin-bottom: 15px; background: white;">
+          <div style="display: flex; justify-content: space-between; align-items: start;">
+            <div style="flex: 1;">
+              <h3 style="margin-top: 0;">{{this.product.title}}</h3>
+              <p style="color: #666; margin: 5px 0;">{{this.product.description}}</p>
+              <div style="margin: 10px 0;">
+                <strong style="font-size: 18px; color: #2b6cb0;">${{this.product.price}}</strong>
+                <span style="color: #666;"> × {{this.quantity}} = ${{multiply this.product.price this.quantity}}</span>
+              </div>
+              {{#if this.product.category}}
+                <small style="background: #e0e0e0; padding: 2px 8px; border-radius: 4px;">{{this.product.category}}</small>
+              {{/if}}
+            </div>
+            <div style="margin-left: 20px;">
+              <div style="margin-bottom: 10px;">
+                <label>Cantidad:</label>
+                <input type="number" 
+                       class="quantity-input" 
+                       data-product-id="{{this.product._id}}" 
+                       value="{{this.quantity}}" 
+                       min="1" 
+                       style="width: 60px; padding: 4px; margin-left: 5px;">
+                <button class="update-quantity-btn btn btn-primary" 
+                        data-product-id="{{this.product._id}}" 
+                        style="margin-left: 5px; padding: 4px 8px; font-size: 12px;">
+                  Actualizar
+                </button>
+              </div>
+              <button class="remove-product-btn btn btn-danger" 
+                      data-product-id="{{this.product._id}}" 
+                      style="width: 100%; padding: 6px;">
+                Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+      {{/if}}
+    {{/each}}
+  </div>
+  
+  <div style="margin-top: 30px; padding: 20px; background: #f0f0f0; border-radius: 8px;">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <h2 style="margin: 0;">Total: ${{calculateTotal cart.products}}</h2>
+      <button id="clearCartBtn" class="btn btn-danger" style="padding: 10px 20px;">
+        Vaciar carrito
+      </button>
+    </div>
+  </div>
+{{else}}
+  <p style="text-align: center; padding: 40px; color: #666;">El carrito está vacío.</p>
+{{/if}}
+
+<div style="margin-top: 20px;">
+  <a href="/products" class="btn btn-primary" style="text-decoration: none;">← Continuar comprando</a>
+</div>
+
+<script>
+const cartId = '{{cart._id}}';
+
+// Helper para multiplicar (debería estar en el servidor, pero lo hacemos aquí)
+function multiply(a, b) {
+  return (a * b).toFixed(2);
+}
+
+// Actualizar cantidad
+document.querySelectorAll('.update-quantity-btn').forEach(btn => {
+  btn.addEventListener('click', async function() {
+    const productId = this.dataset.productId;
+    const quantityInput = document.querySelector(`.quantity-input[data-product-id="${productId}"]`);
+    const quantity = parseInt(quantityInput.value);
+    
+    if (quantity < 1) {
+      alert('La cantidad debe ser mayor a 0');
+      return;
+    }
+    
+    try {
+      const response = await fetch(`/api/carts/${cartId}/products/${productId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ quantity })
+      });
+      
+      if (response.ok) {
+        window.location.reload();
+      } else {
+        const error = await response.json();
+        alert('Error: ' + (error.message || 'No se pudo actualizar'));
+      }
+    } catch (error) {
+      alert('Error al actualizar cantidad');
+    }
+  });
+});
+
+// Eliminar producto
+document.querySelectorAll('.remove-product-btn').forEach(btn => {
+  btn.addEventListener('click', async function() {
+    if (!confirm('¿Eliminar este producto del carrito?')) return;
+    
+    const productId = this.dataset.productId;
+    
+    try {
+      const response = await fetch(`/api/carts/${cartId}/products/${productId}`, {
+        method: 'DELETE'
+      });
+      
+      if (response.ok) {
+        window.location.reload();
+      } else {
+        alert('Error al eliminar producto');
+      }
+    } catch (error) {
+      alert('Error al eliminar producto');
+    }
+  });
+});
+
+// Vaciar carrito
+document.getElementById('clearCartBtn')?.addEventListener('click', async function() {
+  if (!confirm('¿Vaciar todo el carrito?')) return;
+  
+  try {
+    const response = await fetch(`/api/carts/${cartId}`, {
+      method: 'DELETE'
+    });
+    
+    if (response.ok) {
+      window.location.reload();
+    } else {
+      alert('Error al vaciar carrito');
+    }
+  } catch (error) {
+    alert('Error al vaciar carrito');
+  }
+});
+</script>
+
+<style>
+.btn {
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+  transition: opacity 0.2s;
+}
+.btn:hover {
+  opacity: 0.8;
+}
+.btn-primary {
+  background: #2b6cb0;
+  color: white;
+}
+.btn-danger {
+  background: #dc3545;
+  color: white;
+}
+</style>
+
