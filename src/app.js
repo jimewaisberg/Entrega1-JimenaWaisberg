@@ -3,7 +3,10 @@ const { createServer } = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
 const exphbs = require('express-handlebars');
+const cookieParser = require('cookie-parser');
+const passport = require('passport');
 const connectDB = require('./config/database');
+const initializePassport = require('./config/passport.config');
 
 // Conectar a MongoDB
 connectDB();
@@ -45,6 +48,13 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Cookie parser
+app.use(cookieParser());
+
+// Passport initialization
+initializePassport();
+app.use(passport.initialize());
+
 // Middleware para pasar io a los routers
 app.use((req, res, next) => {
   req.io = io;
@@ -56,10 +66,12 @@ const productsRouter = require('./routes/products');
 const { postProduct, deleteProduct } = require('./routes/products');
 const viewsRouter = require('./routes/views');
 const cartsRouter = require('./routes/carts');
+const sessionsRouter = require('./routes/sessions');
 
 // mount routes
 app.use('/api/products', productsRouter);
 app.use('/api/carts', cartsRouter);
+app.use('/api/sessions', sessionsRouter);
 app.use('/', viewsRouter);
 
 // Middleware 404 - debe ir después de las rutas
@@ -138,4 +150,3 @@ const PORT = process.env.PORT || 8080;
 httpServer.listen(PORT, () => {
   console.log(`Servidor corriendo en puerto ${PORT}`);
 });
-

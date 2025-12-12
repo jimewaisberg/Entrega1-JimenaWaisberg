@@ -1,7 +1,46 @@
 const express = require('express');
 const router = express.Router();
+const passport = require('passport');
 const productManager = require('../utils/productManager');
 const Cart = require('../models/Cart');
+
+// Middleware para verificar si el usuario está autenticado
+const isAuthenticated = (req, res, next) => {
+  passport.authenticate('jwt', { session: false }, (err, user) => {
+    if (err || !user) {
+      return res.redirect('/login');
+    }
+    req.user = user;
+    next();
+  })(req, res, next);
+};
+
+// Middleware para redirigir usuarios ya autenticados
+const isNotAuthenticated = (req, res, next) => {
+  passport.authenticate('jwt', { session: false }, (err, user) => {
+    if (user) {
+      return res.redirect('/products');
+    }
+    next();
+  })(req, res, next);
+};
+
+// GET /login - vista de login
+router.get('/login', isNotAuthenticated, (req, res) => {
+  const error = req.query.error;
+  res.render('login', { error, title: 'Login' });
+});
+
+// GET /register - vista de registro
+router.get('/register', isNotAuthenticated, (req, res) => {
+  const error = req.query.error;
+  res.render('register', { error, title: 'Registro' });
+});
+
+// GET /profile - vista del perfil del usuario (protegida)
+router.get('/profile', isAuthenticated, (req, res) => {
+  res.render('profile', { user: req.user, title: 'Mi Perfil' });
+});
 
 router.get('/', async (req, res) => {
   try {
@@ -52,6 +91,14 @@ router.get('/products', async (req, res) => {
       return queryString ? `${baseUrl}?${queryString}` : baseUrl;
     };
 
+    // Verificar si el usuario está autenticado para mostrar su info
+    let user = null;
+    passport.authenticate('jwt', { session: false }, (err, authenticatedUser) => {
+      if (!err && authenticatedUser) {
+        user = authenticatedUser;
+      }
+    })(req, res, () => {});
+
     res.render('products/index', {
       products: products || [],
       pagination: {
@@ -62,6 +109,7 @@ router.get('/products', async (req, res) => {
       currentLimit: limit,
       currentSort: sort,
       currentQuery: query,
+      user,
       title: 'Productos'
     });
   } catch (error) {
@@ -80,7 +128,16 @@ router.get('/products/:pid', async (req, res) => {
         title: 'Error 404' 
       });
     }
-    res.render('products/detail', { product, title: product.title });
+
+    // Verificar si el usuario está autenticado
+    let user = null;
+    passport.authenticate('jwt', { session: false }, (err, authenticatedUser) => {
+      if (!err && authenticatedUser) {
+        user = authenticatedUser;
+      }
+    })(req, res, () => {});
+
+    res.render('products/detail', { product, user, title: product.title });
   } catch (error) {
     console.error('Error en GET /products/:pid:', error);
     res.status(500).render('error', { message: 'Error al cargar producto', title: 'Error' });

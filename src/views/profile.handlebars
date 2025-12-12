@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mi Perfil - E-commerce</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    
+    .profile-container {
+      background: rgba(255, 255, 255, 0.95);
+      padding: 40px;
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      width: 100%;
+      max-width: 500px;
+    }
+    
+    .profile-header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    
+    .profile-avatar {
+      width: 100px;
+      height: 100px;
+      background: linear-gradient(135deg, #0f3460, #16213e);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+      font-size: 40px;
+      color: white;
+    }
+    
+    .profile-header h1 {
+      color: #1a1a2e;
+      font-size: 26px;
+      margin-bottom: 5px;
+    }
+    
+    .profile-header .role-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      background: #e0f2fe;
+      color: #0369a1;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    
+    .profile-info {
+      margin-top: 30px;
+    }
+    
+    .info-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 15px 0;
+      border-bottom: 1px solid #e1e1e1;
+    }
+    
+    .info-item:last-child {
+      border-bottom: none;
+    }
+    
+    .info-label {
+      color: #666;
+      font-weight: 500;
+    }
+    
+    .info-value {
+      color: #1a1a2e;
+      font-weight: 600;
+    }
+    
+    .profile-actions {
+      margin-top: 30px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    
+    .btn {
+      padding: 14px;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-align: center;
+      text-decoration: none;
+    }
+    
+    .btn-primary {
+      background: linear-gradient(135deg, #0f3460, #16213e);
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(15, 52, 96, 0.4);
+    }
+    
+    .btn-secondary {
+      background: #f1f5f9;
+      color: #475569;
+    }
+    
+    .btn-secondary:hover {
+      background: #e2e8f0;
+    }
+    
+    .btn-logout {
+      background: #fee2e2;
+      color: #dc2626;
+    }
+    
+    .btn-logout:hover {
+      background: #fecaca;
+    }
+  </style>
+</head>
+<body>
+  <div class="profile-container">
+    <div class="profile-header">
+      <div class="profile-avatar">
+        {{#if user.first_name}}
+          {{user.first_name.[0]}}
+        {{else}}
+          U
+        {{/if}}
+      </div>
+      <h1>{{user.first_name}} {{user.last_name}}</h1>
+      <span class="role-badge">{{user.role}}</span>
+    </div>
+    
+    <div class="profile-info">
+      <div class="info-item">
+        <span class="info-label">Email</span>
+        <span class="info-value">{{user.email}}</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">Edad</span>
+        <span class="info-value">{{user.age}} años</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">ID de Usuario</span>
+        <span class="info-value" style="font-size: 12px;">{{user.id}}</span>
+      </div>
+      {{#if user.cart}}
+      <div class="info-item">
+        <span class="info-label">Carrito</span>
+        <span class="info-value" style="font-size: 12px;">{{user.cart}}</span>
+      </div>
+      {{/if}}
+    </div>
+    
+    <div class="profile-actions">
+      <a href="/products" class="btn btn-primary">Ver Productos</a>
+      {{#if user.cart}}
+      <a href="/carts/{{user.cart}}" class="btn btn-secondary">Mi Carrito</a>
+      {{/if}}
+      <button onclick="logout()" class="btn btn-logout">Cerrar Sesión</button>
+    </div>
+  </div>
+
+  <script>
+    async function logout() {
+      try {
+        const response = await fetch('/api/sessions/logout');
+        const data = await response.json();
+        if (data.status === 'success') {
+          window.location.href = '/login';
+        }
+      } catch (error) {
+        alert('Error al cerrar sesión');
+      }
+    }
+  </script>
+</body>
+</html>
+
