@@ -1,16 +1,26 @@
+/**
+ * Products Router
+ * Maneja operaciones CRUD de productos
+ * Middleware de autorización: Solo admin puede crear, actualizar y eliminar
+ * Usa la estrategia "current" de Passport para autenticación
+ */
 const express = require('express');
 const router = express.Router();
-const productManager = require('../utils/productManager');
+const productService = require('../services/product.service');
+const { authenticateCurrent, isAdmin } = require('../middlewares/authorization');
 
-// GET /api/products - con paginación, filtros y ordenamiento
+/**
+ * GET /api/products
+ * Obtener productos con paginación, filtros y ordenamiento
+ * Público - no requiere autenticación
+ */
 router.get('/', async (req, res) => {
   try {
     const limit = req.query.limit ? parseInt(req.query.limit) : 10;
     const page = req.query.page ? parseInt(req.query.page) : 1;
-    const sort = req.query.sort || null; // 'asc' o 'desc'
-    const query = req.query.query || null; // filtro
+    const sort = req.query.sort || null;
+    const query = req.query.query || null;
 
-    // Validar parámetros
     if (limit < 1 || page < 1) {
       return res.status(400).json({
         status: 'error',
@@ -18,7 +28,7 @@ router.get('/', async (req, res) => {
       });
     }
 
-    const result = await productManager.getProductsPaginated({
+    const result = await productService.getProductsPaginated({
       limit,
       page,
       sort,
@@ -39,7 +49,7 @@ router.get('/', async (req, res) => {
       return queryString ? `${baseUrl}?${queryString}` : baseUrl;
     };
 
-    const response = {
+    res.json({
       status: 'success',
       payload: products,
       totalPages: pagination.totalPages,
@@ -50,9 +60,7 @@ router.get('/', async (req, res) => {
       hasNextPage: pagination.hasNextPage,
       prevLink: pagination.hasPrevPage ? buildLink(pagination.prevPage) : null,
       nextLink: pagination.hasNextPage ? buildLink(pagination.nextPage) : null
-    };
-
-    res.json(response);
+    });
   } catch (error) {
     console.error('GET /api/products error:', error);
     res.status(500).json({
@@ -63,14 +71,18 @@ router.get('/', async (req, res) => {
   }
 });
 
-// GET /api/products/:pid
+/**
+ * GET /api/products/:pid
+ * Obtener un producto por ID
+ * Público - no requiere autenticación
+ */
 router.get('/:pid', async (req, res) => {
   try {
-    const product = await productManager.getProductById(req.params.pid);
+    const product = await productService.getProductById(req.params.pid);
     if (product) {
       res.json(product);
     } else {
-      res.status(404).json({ message: 'Product not found' });
+      res.status(404).json({ message: 'Producto no encontrado' });
     }
   } catch (error) {
     console.error('GET /api/products/:pid error:', error);
@@ -78,16 +90,23 @@ router.get('/:pid', async (req, res) => {
   }
 });
 
-// POST /api/products - método del router que hace el alta y emite eventos usando req.io
+/**
+ * POST /api/products
+ * Crear un nuevo producto
+ * Solo ADMIN puede ejecutar esta acción
+ * Usa estrategia "current" para autenticación
+ */
 const postProduct = async (req, res) => {
   try {
-    const newProduct = await productManager.addProduct(req.body);
-    // emitir usando req.io del middleware
+    const newProduct = await productService.createProduct(req.body);
+    
+    // Emitir evento de actualización si hay socket.io
     if (req.io && typeof req.io.emit === 'function') {
-      const products = await productManager.getProducts();
+      const products = await productService.getAllProducts();
       req.io.emit('updateProducts', products);
       req.io.emit('actionSuccess', { message: 'Producto creado correctamente' });
     }
+    
     if (res) {
       res.status(201).json(newProduct);
     }
@@ -104,27 +123,33 @@ const postProduct = async (req, res) => {
       throw err;
     }
     if (res) {
-      res.status(500).json({ message: 'Error creating product' });
+      res.status(500).json({ message: 'Error al crear producto' });
     }
     throw err;
   }
 };
 
-router.post('/', postProduct);
+// Ruta protegida: Solo admin (usa estrategia "current")
+router.post('/', authenticateCurrent, isAdmin, postProduct);
 
-// PUT /api/products/:pid
-router.put('/:pid', async (req, res) => {
+/**
+ * PUT /api/products/:pid
+ * Actualizar un producto
+ * Solo ADMIN puede ejecutar esta acción
+ * Usa estrategia "current" para autenticación
+ */
+router.put('/:pid', authenticateCurrent, isAdmin, async (req, res) => {
   try {
-    const updated = await productManager.updateProduct(req.params.pid, req.body);
+    const updated = await productService.updateProduct(req.params.pid, req.body);
     if (updated) {
       if (req.io && typeof req.io.emit === 'function') {
-        const products = await productManager.getProducts();
+        const products = await productService.getAllProducts();
         req.io.emit('updateProducts', products);
         req.io.emit('actionSuccess', { message: 'Producto actualizado correctamente' });
       }
       res.json(updated);
     } else {
-      res.status(404).json({ message: 'Product not found' });
+      res.status(404).json({ message: 'Producto no encontrado' });
     }
   } catch (err) {
     console.error('PUT /api/products/:pid error:', err);
@@ -134,43 +159,46 @@ router.put('/:pid', async (req, res) => {
       }
       return res.status(400).json({ message: err.message });
     }
-    res.status(500).json({ message: 'Error updating product' });
+    res.status(500).json({ message: 'Error al actualizar producto' });
   }
 });
 
-// DELETE /api/products/:pid - método del router que hace la baja y emite eventos usando req.io
+/**
+ * DELETE /api/products/:pid
+ * Eliminar un producto
+ * Solo ADMIN puede ejecutar esta acción
+ * Usa estrategia "current" para autenticación
+ */
 const deleteProduct = async (req, res) => {
   try {
-    const existed = await productManager.deleteProduct(req.params.pid);
-    if (existed) {
-      // emitir usando req.io del middleware
+    const deleted = await productService.deleteProduct(req.params.pid);
+    if (deleted) {
       if (req.io && typeof req.io.emit === 'function') {
-        const products = await productManager.getProducts();
+        const products = await productService.getAllProducts();
         req.io.emit('updateProducts', products);
         req.io.emit('actionSuccess', { message: 'Producto eliminado correctamente' });
       }
       if (res) {
-        res.json({ message: 'Product deleted' });
+        res.json({ message: 'Producto eliminado' });
       }
       return true;
     } else {
       if (res) {
-        res.status(404).json({ message: 'Product not found' });
+        res.status(404).json({ message: 'Producto no encontrado' });
       }
       return false;
     }
   } catch (err) {
     console.error('DELETE /api/products/:pid error:', err);
     if (res) {
-      res.status(500).json({ message: 'Error deleting product' });
+      res.status(500).json({ message: 'Error al eliminar producto' });
     }
     throw err;
   }
 };
 
-router.delete('/:pid', deleteProduct);
+router.delete('/:pid', authenticateCurrent, isAdmin, deleteProduct);
 
 module.exports = router;
-// Exportar los métodos para que puedan ser usados desde sockets
 module.exports.postProduct = postProduct;
 module.exports.deleteProduct = deleteProduct;

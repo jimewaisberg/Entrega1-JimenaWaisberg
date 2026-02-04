@@ -6,7 +6,7 @@ yarn-debug.log*
 yarn-error.log*
 package-lock.json
 # entorno local
-.env
+# .env (incluido en el repo para la entrega - cambiar en producción)
 .DS_Store
 # builds
 dist/
